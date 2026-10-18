@@ -14,6 +14,23 @@ sample_dataset/audio/
 # Precomputed feature cache (344 MB of .npy arrays, generated via script)
 data_artifacts/cache/
 
+# Scratch & Generator Scripts (Internal development tools)
+generate_*.py
+inspect_*.py
+test_resnet_feature_extraction.py
+test_energy_aware_inference.py
+train_and_evaluate_custom_cnn.py
+train_mobilenet_attention.py
+train_optimized_resnet.py
+precompute_mel_features.py
+
+# Root duplicate files (All primary code resides in code/)
+/01_data_preprocessing.ipynb
+/02_custom_cnn.ipynb
+/03_resnet.ipynb
+/04_model_evaluation.ipynb
+/test_model.py
+
 # Python, Bytecode & Cache
 __pycache__/
 *.py[cod]
