@@ -1,0 +1,19 @@
+{
+    "seed": 42,
+    "sample_rate": 32000,
+    "clip_duration": 5.0,
+    "num_samples": 160000,
+    "n_fft": 2048,
+    "hop_length": 512,
+    "win_length": 2048,
+    "n_mels": 128,
+    "f_min": 50.0,
+    "f_max": 14000.0,
+    "power": 2.0,
+    "top_db": 80.0,
+    "num_target_species": 15,
+    "batch_size": 32,
+    "train_ratio": 0.7,
+    "val_ratio": 0.15,
+    "test_ratio": 0.15
+}

@@ -1,0 +1,129 @@
+{
+    "num_classes": 15,
+    "species_to_idx": {
+        "barswa": 0,
+        "bcnher": 1,
+        "bkwsti": 2,
+        "blrwar1": 3,
+        "comgre": 4,
+        "comkin1": 5,
+        "commoo3": 6,
+        "comros": 7,
+        "comsan": 8,
+        "eaywag1": 9,
+        "eucdov": 10,
+        "eurcoo": 11,
+        "graher1": 12,
+        "grewar3": 13,
+        "grnsan": 14
+    },
+    "idx_to_species": {
+        "0": "barswa",
+        "1": "bcnher",
+        "2": "bkwsti",
+        "3": "blrwar1",
+        "4": "comgre",
+        "5": "comkin1",
+        "6": "commoo3",
+        "7": "comros",
+        "8": "comsan",
+        "9": "eaywag1",
+        "10": "eucdov",
+        "11": "eurcoo",
+        "12": "graher1",
+        "13": "grewar3",
+        "14": "grnsan"
+    },
+    "species_metadata": {
+        "barswa": {
+            "common_name": "Barn Swallow",
+            "scientific_name": "Hirundo rustica",
+            "count": 150,
+            "mean_rating": 3.8066666666666666
+        },
+        "bcnher": {
+            "common_name": "Black-crowned Night-Heron",
+            "scientific_name": "Nycticorax nycticorax",
+            "count": 150,
+            "mean_rating": 3.64
+        },
+        "bkwsti": {
+            "common_name": "Black-winged Stilt",
+            "scientific_name": "Himantopus himantopus",
+            "count": 150,
+            "mean_rating": 3.6466666666666665
+        },
+        "blrwar1": {
+            "common_name": "Blyth's Reed Warbler",
+            "scientific_name": "Acrocephalus dumetorum",
+            "count": 150,
+            "mean_rating": 3.98
+        },
+        "comgre": {
+            "common_name": "Common Greenshank",
+            "scientific_name": "Tringa nebularia",
+            "count": 150,
+            "mean_rating": 3.8066666666666666
+        },
+        "comkin1": {
+            "common_name": "Common Kingfisher",
+            "scientific_name": "Alcedo atthis",
+            "count": 150,
+            "mean_rating": 3.4033333333333333
+        },
+        "commoo3": {
+            "common_name": "Eurasian Moorhen",
+            "scientific_name": "Gallinula chloropus",
+            "count": 150,
+            "mean_rating": 3.3766666666666665
+        },
+        "comros": {
+            "common_name": "Common Rosefinch",
+            "scientific_name": "Carpodacus erythrinus",
+            "count": 150,
+            "mean_rating": 3.8033333333333332
+        },
+        "comsan": {
+            "common_name": "Common Sandpiper",
+            "scientific_name": "Actitis hypoleucos",
+            "count": 150,
+            "mean_rating": 3.4766666666666666
+        },
+        "eaywag1": {
+            "common_name": "Western Yellow Wagtail",
+            "scientific_name": "Motacilla flava",
+            "count": 150,
+            "mean_rating": 3.723333333333333
+        },
+        "eucdov": {
+            "common_name": "Eurasian Collared-Dove",
+            "scientific_name": "Streptopelia decaocto",
+            "count": 150,
+            "mean_rating": 3.54
+        },
+        "eurcoo": {
+            "common_name": "Eurasian Coot",
+            "scientific_name": "Fulica atra",
+            "count": 150,
+            "mean_rating": 3.5433333333333334
+        },
+        "graher1": {
+            "common_name": "Gray Heron",
+            "scientific_name": "Ardea cinerea",
+            "count": 150,
+            "mean_rating": 3.783333333333333
+        },
+        "grewar3": {
+            "common_name": "Greenish Warbler",
+            "scientific_name": "Phylloscopus trochiloides",
+            "count": 150,
+            "mean_rating": 3.63
+        },
+        "grnsan": {
+            "common_name": "Green Sandpiper",
+            "scientific_name": "Tringa ochropus",
+            "count": 150,
+            "mean_rating": 3.5566666666666666
+        }
+    }
+}

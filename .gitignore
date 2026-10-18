@@ -1,0 +1,32 @@
+# =========================================================================
+# Git Ignore Configuration for Bioacoustic Bird Species Identification
+# =========================================================================
+
+# Large raw datasets (Do NOT push to GitHub)
+raw_data/
+
+# Audio binary files (758 MB - Share via Google Drive link for Colab)
+sample_dataset/audio/
+*.ogg
+*.wav
+*.mp3
+
+# Precomputed feature cache (344 MB of .npy arrays, generated via script)
+data_artifacts/cache/
+
+# Python, Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+*.log
+
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini
