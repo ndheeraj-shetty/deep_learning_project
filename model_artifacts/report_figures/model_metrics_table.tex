@@ -1,0 +1,19 @@
+\begin{table*}[t]
+\centering
+\caption{Comprehensive Empirical Evaluation on the BirdCLEF 2024 Held-Out Test Set ($N=338$ Recordings).}
+\label{tab:bioacoustic_benchmark}
+\small
+\begin{tabular}{llrcccc}
+\toprule
+\textbf{Model Architecture} & \textbf{Paradigm} & \textbf{Parameters} & \textbf{Top-1 Acc (\%)} & \textbf{Top-3 Acc (\%)} & \textbf{Macro F1 (\%)} & \textbf{Weighted F1 (\%)} \\
+\midrule
+Baseline Custom CNN & CNN from scratch & 423,727 & 50.59\% & N/A & 50.26\% & 50.17\% \\
+Pretrained ResNet-18 & Residual CNN & 11,184,143 & 49.11\% & N/A & 49.00\% & 49.02\% \\
+MobileNetV3 + SE & Attention CNN & 1,674,863 & 79.59\% & 92.60\% & 79.75\% & 79.72\% \\
+Bioacoustic CRNN & Hybrid CNN+BiGRU & 786,800 & 83.73\% & 93.49\% & 83.81\% & 83.80\% \\
+EfficientNet-B0 & Inverted Bottleneck & 4,339,595 & 86.69\% & 94.67\% & 86.63\% & 86.61\% \\
+ConvNeXt-Tiny & Modern Depthwise CNN & 28,021,359 & 87.28\% & 95.86\% & 87.37\% & 87.32\% \\
+BirdNET (Cornell) & Foundation SOTA & 15,000,000 & 97.34\% & 99.70\% & 97.33\% & 97.32\% \\
+\bottomrule
+\end{tabular}
+\end{table*}

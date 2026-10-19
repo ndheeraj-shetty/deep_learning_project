@@ -2,23 +2,36 @@
 Interactive Bioacoustic Model Tester & Inference Engine
 Evaluates models on the holdout test set and performs single-file birdsong audio prediction.
 
+Supported Models:
+    --model efficientnet  (Bioacoustic EfficientNet-B0 MBConv)
+    --model convnext      (Bioacoustic ConvNeXt-Tiny Modernized CNN)
+    --model crnn          (Bioacoustic CNN + Bi-GRU + Attention)
+    --model mobilenet     (MobileNetV3-Small + SE Attention)
+    --model custom_cnn    (Baseline Custom 4-Block CNN)
+
 Usage Examples:
-    # 1. Run final optimized evaluation on holdout test set (Top-3 Multi-Window Ensemble):
-    python test_model.py --model mobilenet --mode evaluate
+    # 1. Run final holdout test evaluation:
+    python code/test_model.py --model efficientnet --mode evaluate
+    python code/test_model.py --model convnext --mode evaluate
+    python code/test_model.py --model crnn --mode evaluate
 
-    # 2. Run baseline Custom CNN evaluation:
-    python test_model.py --model custom_cnn --mode evaluate
-
-    # 3. Predict single audio file:
-    python test_model.py --model mobilenet --mode predict --audio sample_dataset/audio/comkin1/XC110343.ogg
+    # 2. Predict single audio file:
+    python code/test_model.py --model efficientnet --mode predict --audio sample_dataset/audio/comkin1/XC110343.ogg
+    python code/test_model.py --model convnext --mode predict --audio sample_dataset/audio/barswa/XC133802.ogg
 """
 
 import sys
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
 import json
 import argparse
+from pathlib import Path
 import numpy as np
 import pandas as pd
-from pathlib import Path
+import soundfile as sf
 
 import torch
 import torch.nn as nn
@@ -30,13 +43,18 @@ from sklearn.metrics import classification_report, accuracy_score, f1_score, pre
 VOCAB_PATH = Path("data_artifacts/vocab/species_mapping.json")
 CONFIG_PATH = Path("data_artifacts/config/preprocessing_config.json")
 TEST_MANIFEST_PATH = Path("data_artifacts/manifests/test_manifest.csv")
-CACHE_DIR = Path("data_artifacts/cache")
 AUDIO_BASE = Path("sample_dataset/audio")
 
-CUSTOM_CNN_CKPT = Path("model_artifacts/custom_cnn/best_custom_cnn.pt")
-MOBILENET_CKPT = Path("model_artifacts/optimized_mobilenet/best_mobilenet_model.pt")
+CKPT_PATHS = {
+    "custom_cnn": Path("model_artifacts/custom_cnn/best_custom_cnn.pt"),
+    "mobilenet": Path("model_artifacts/optimized_mobilenet/best_mobilenet_model.pt"),
+    "efficientnet": Path("model_artifacts/efficientnet_b0/best_efficientnet_b0.pt"),
+    "convnext": Path("model_artifacts/convnext_tiny/best_convnext_tiny.pt"),
+    "crnn": Path("model_artifacts/crnn/best_crnn.pt")
+}
 
-# Baseline Custom CNN Architecture
+# --- Architecture Definitions ---
+
 class ConvBlock(nn.Module):
     def __init__(self, in_c: int, out_c: int):
         super().__init__()
@@ -80,11 +98,84 @@ def build_mobilenet(num_classes=15):
     )
     return m
 
-def load_pipeline(model_type="mobilenet"):
+def build_efficientnet(num_classes=15):
+    m = models.efficientnet_b0(weights=None)
+    in_features = m.classifier[1].in_features
+    m.classifier = nn.Sequential(
+        nn.Dropout(p=0.35),
+        nn.Linear(in_features, 256, bias=False),
+        nn.BatchNorm1d(256),
+        nn.SiLU(inplace=True),
+        nn.Dropout(p=0.25),
+        nn.Linear(256, num_classes)
+    )
+    return m
+
+def build_convnext(num_classes=15):
+    m = models.convnext_tiny(weights=None)
+    in_features = m.classifier[2].in_features
+    m.classifier[2] = nn.Sequential(
+        nn.Linear(in_features, 256),
+        nn.LayerNorm(256),
+        nn.GELU(),
+        nn.Dropout(p=0.30),
+        nn.Linear(256, num_classes)
+    )
+    return m
+
+class CRNNBlock(nn.Module):
+    def __init__(self, in_c, out_c, pool_stride=(2, 1)):
+        super().__init__()
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_c, out_c, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(out_c),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=pool_stride, stride=pool_stride)
+        )
+    def forward(self, x): return self.conv(x)
+
+class BioacousticCRNN(nn.Module):
+    def __init__(self, num_classes=15, in_channels=1, hidden_dim=128):
+        super().__init__()
+        self.b1 = CRNNBlock(in_channels, 32, pool_stride=(2, 2))
+        self.b2 = CRNNBlock(32, 64, pool_stride=(2, 2))
+        self.b3 = CRNNBlock(64, 128, pool_stride=(2, 1))
+        self.b4 = CRNNBlock(128, 128, pool_stride=(4, 1))
+        self.freq_pool = nn.AdaptiveAvgPool2d((1, None))
+        self.gru = nn.GRU(
+            input_size=128,
+            hidden_size=hidden_dim,
+            num_layers=2,
+            batch_first=True,
+            bidirectional=True,
+            dropout=0.25
+        )
+        self.attn = nn.Sequential(
+            nn.Linear(hidden_dim * 2, 64),
+            nn.Tanh(),
+            nn.Linear(64, 1)
+        )
+        self.fc = nn.Sequential(
+            nn.Linear(hidden_dim * 2, 128),
+            nn.BatchNorm1d(128),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.35),
+            nn.Linear(128, num_classes)
+        )
+
+    def forward(self, x):
+        h = self.b4(self.b3(self.b2(self.b1(x))))
+        h = self.freq_pool(h).squeeze(2).permute(0, 2, 1)
+        gru_out, _ = self.gru(h)
+        attn_weights = torch.softmax(self.attn(gru_out), dim=1)
+        context = torch.sum(gru_out * attn_weights, dim=1)
+        return self.fc(context)
+
+def load_pipeline(model_type="efficientnet"):
     if not VOCAB_PATH.exists():
         raise FileNotFoundError(f"Species vocabulary not found at: {VOCAB_PATH}")
         
-    with open(VOCAB_PATH, "r") as f:
+    with open(VOCAB_PATH, "r", encoding="utf-8") as f:
         vocab = json.load(f)
         
     num_classes = vocab["num_classes"]
@@ -92,30 +183,42 @@ def load_pipeline(model_type="mobilenet"):
     metadata = vocab["species_metadata"]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    if model_type == "mobilenet":
-        if not MOBILENET_CKPT.exists():
-            raise FileNotFoundError(f"Checkpoint not found at: {MOBILENET_CKPT}")
-        model = build_mobilenet(num_classes=num_classes).to(device)
-        ckpt = torch.load(MOBILENET_CKPT, map_location=device, weights_only=False)
-        model.load_state_dict(ckpt["model_state_dict"])
-        model_name = "Optimized MobileNetV3-Small (Squeeze-and-Excitation Attention)"
+    ckpt_path = CKPT_PATHS.get(model_type)
+    if not ckpt_path or not ckpt_path.exists():
+        raise FileNotFoundError(f"Checkpoint not found for model '{model_type}' at: {ckpt_path}")
+        
+    if model_type == "efficientnet":
+        model = build_efficientnet(num_classes=num_classes).to(device)
+        model_name = "Bioacoustic EfficientNet-B0 (MBConv)"
         is_3channel = True
-    else:
-        if not CUSTOM_CNN_CKPT.exists():
-            raise FileNotFoundError(f"Checkpoint not found at: {CUSTOM_CNN_CKPT}")
+    elif model_type == "convnext":
+        model = build_convnext(num_classes=num_classes).to(device)
+        model_name = "Bioacoustic ConvNeXt-Tiny (Modernized CNN)"
+        is_3channel = True
+    elif model_type == "crnn":
+        model = BioacousticCRNN(num_classes=num_classes, in_channels=1).to(device)
+        model_name = "Bioacoustic CRNN (CNN + Bi-GRU + Attention)"
+        is_3channel = False
+    elif model_type == "mobilenet":
+        model = build_mobilenet(num_classes=num_classes).to(device)
+        model_name = "Bioacoustic MobileNetV3-Small (SE Attention)"
+        is_3channel = True
+    elif model_type == "custom_cnn":
         model = BioacousticCustomCNN(num_classes=num_classes).to(device)
-        ckpt = torch.load(CUSTOM_CNN_CKPT, map_location=device, weights_only=False)
-        model.load_state_dict(ckpt["model_state_dict"])
         model_name = "Baseline Custom CNN"
         is_3channel = False
+    else:
+        raise ValueError(f"Unknown model_type: {model_type}")
         
+    ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
+    model.load_state_dict(ckpt["model_state_dict"])
     model.eval()
     return model, device, idx_to_species, metadata, ckpt, model_name, is_3channel
 
 def get_top_k_energy_windows(y: np.ndarray, sr=32000, duration=5.0, k=3):
     window = int(sr * duration)
     if len(y) <= window:
-        repeats = int(np.ceil(window / len(y)))
+        repeats = int(np.ceil(window / max(len(y), 1)))
         return [np.tile(y, repeats)[:window]]
     hop = int(sr * 1.0)
     windows = []
@@ -145,14 +248,17 @@ def extract_mel_tensor(clip: np.ndarray, sr=32000, is_3channel=True) -> torch.Te
     else:
         return torch.from_numpy(mel_norm).float().unsqueeze(0).unsqueeze(0)
 
-def predict_single_audio(file_path: str, model_type="mobilenet", top_k=3):
+def predict_single_audio(file_path: str, model_type="efficientnet", top_k=3):
     model, device, idx_to_species, metadata, ckpt, model_name, is_3channel = load_pipeline(model_type)
     file_path = Path(file_path)
     if not file_path.exists():
         raise FileNotFoundError(f"Audio file not found: {file_path}")
         
-    y, sr = librosa.load(str(file_path), sr=32000, mono=True)
-    clips = get_top_k_energy_windows(y, sr=32000, duration=5.0, k=3)
+    y, sr = sf.read(str(file_path), dtype="float32")
+    if y.ndim > 1: y = np.mean(y, axis=1)
+    if sr != 32000: y = librosa.resample(y, orig_sr=sr, target_sr=32000)
+    
+    clips = get_top_k_energy_windows(y, sr=32000, duration=5.0, k=top_k)
     tensors = torch.cat([extract_mel_tensor(c, sr=32000, is_3channel=is_3channel) for c in clips], dim=0).to(device)
     
     with torch.no_grad():
@@ -165,8 +271,8 @@ def predict_single_audio(file_path: str, model_type="mobilenet", top_k=3):
     print("=" * 80)
     print(f"Active Architecture : {model_name}")
     print(f"Selected Checkpoint : Epoch {ckpt['epoch']}")
-    print(f"Inference Mode      : Activity-Aware Top-3 Window Temporal Ensemble")
-    print(f"Audio Duration      : {len(y)/sr:.2f} seconds")
+    print(f"Inference Mode      : Activity-Aware Top-{top_k} Window Temporal Ensemble")
+    print(f"Audio Duration      : {len(y)/32000:.2f} seconds")
     print("-" * 80)
     print("TOP PREDICTED CANDIDATES:")
     print("-" * 80)
@@ -180,7 +286,7 @@ def predict_single_audio(file_path: str, model_type="mobilenet", top_k=3):
         print(f"Rank {rank} | [{bar}] {conf:>5.2f}% | [{sp_code:<8}] {common} ({scientific})")
     print("=" * 80 + "\n")
 
-def evaluate_test_set(model_type="mobilenet"):
+def evaluate_test_set(model_type="efficientnet"):
     model, device, idx_to_species, metadata, ckpt, model_name, is_3channel = load_pipeline(model_type)
     test_df = pd.read_csv(TEST_MANIFEST_PATH)
     
@@ -195,7 +301,13 @@ def evaluate_test_set(model_type="mobilenet"):
     
     for _, row in test_df.iterrows():
         p = AUDIO_BASE / row["filename"]
-        y, sr = librosa.load(str(p), sr=32000, mono=True)
+        try:
+            y, sr = sf.read(str(p), dtype="float32")
+            if y.ndim > 1: y = np.mean(y, axis=1)
+            if sr != 32000: y = librosa.resample(y, orig_sr=sr, target_sr=32000)
+        except Exception:
+            y = np.zeros(160000, dtype=np.float32)
+            
         clips = get_top_k_energy_windows(y, sr=32000, duration=5.0, k=3)
         tensors = torch.cat([extract_mel_tensor(c, sr=32000, is_3channel=is_3channel) for c in clips], dim=0).to(device)
         with torch.no_grad():
@@ -230,8 +342,10 @@ def evaluate_test_set(model_type="mobilenet"):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test Bioacoustic Bird Species Identification Models")
-    parser.add_argument("--model", type=str, choices=["mobilenet", "custom_cnn"], default="mobilenet",
-                        help="Model architecture: 'mobilenet' (Optimized Attention Model) or 'custom_cnn' (Baseline)")
+    parser.add_argument("--model", type=str,
+                        choices=["efficientnet", "convnext", "crnn", "mobilenet", "custom_cnn"],
+                        default="efficientnet",
+                        help="Model architecture: 'efficientnet', 'convnext', 'crnn', 'mobilenet', 'custom_cnn'")
     parser.add_argument("--mode", type=str, choices=["evaluate", "predict"], default="evaluate",
                         help="Execution mode: 'evaluate' on test set, or 'predict' on single audio")
     parser.add_argument("--audio", type=str, default="sample_dataset/audio/comkin1/XC110343.ogg",

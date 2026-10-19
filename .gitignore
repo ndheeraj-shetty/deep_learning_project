@@ -10,6 +10,11 @@ sample_dataset/audio/
 *.ogg
 *.wav
 *.mp3
+*.zip
+
+# PyTorch weights (>100MB, exceeds GitHub limits)
+*.pt
+*.pth
 
 # Precomputed feature cache (344 MB of .npy arrays, generated via script)
 data_artifacts/cache/

@@ -1,0 +1,119 @@
+{
+    "model_name": "BirdNET (Cornell / Chemnitz Lab Acoustic SOTA)",
+    "benchmark": "BirdCLEF 2024 (15 Target Species)",
+    "open_set_top1_accuracy": 0.8314,
+    "open_set_top3_accuracy": 0.9497,
+    "closed_set_top1_accuracy": 0.9734,
+    "closed_set_top3_accuracy": 0.997,
+    "test_accuracy_top1": 0.9734,
+    "test_accuracy_top3": 0.997,
+    "test_macro_precision": 0.9738,
+    "test_macro_recall": 0.9736,
+    "test_macro_f1": 0.9733,
+    "test_weighted_f1": 0.9732,
+    "classification_report": {
+        "barswa (Barn Swallow)": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 22.0
+        },
+        "bcnher (Black-crowned Night-Heron)": {
+            "precision": 0.9565217391304348,
+            "recall": 0.9565217391304348,
+            "f1-score": 0.9565217391304348,
+            "support": 23.0
+        },
+        "bkwsti (Black-winged Stilt)": {
+            "precision": 0.9565217391304348,
+            "recall": 1.0,
+            "f1-score": 0.9777777777777777,
+            "support": 22.0
+        },
+        "blrwar1 (Blyth's Reed Warbler)": {
+            "precision": 0.9565217391304348,
+            "recall": 0.9565217391304348,
+            "f1-score": 0.9565217391304348,
+            "support": 23.0
+        },
+        "comgre (Common Greenshank)": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 23.0
+        },
+        "comkin1 (Common Kingfisher)": {
+            "precision": 0.9565217391304348,
+            "recall": 1.0,
+            "f1-score": 0.9777777777777777,
+            "support": 22.0
+        },
+        "commoo3 (Eurasian Moorhen)": {
+            "precision": 0.9545454545454546,
+            "recall": 0.9130434782608695,
+            "f1-score": 0.9333333333333333,
+            "support": 23.0
+        },
+        "comros (Common Rosefinch)": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 23.0
+        },
+        "comsan (Common Sandpiper)": {
+            "precision": 0.9565217391304348,
+            "recall": 1.0,
+            "f1-score": 0.9777777777777777,
+            "support": 22.0
+        },
+        "eaywag1 (Western Yellow Wagtail)": {
+            "precision": 1.0,
+            "recall": 0.9090909090909091,
+            "f1-score": 0.9523809523809523,
+            "support": 22.0
+        },
+        "eucdov (Eurasian Collared-Dove)": {
+            "precision": 1.0,
+            "recall": 0.9565217391304348,
+            "f1-score": 0.9777777777777777,
+            "support": 23.0
+        },
+        "eurcoo (Eurasian Coot)": {
+            "precision": 0.9565217391304348,
+            "recall": 1.0,
+            "f1-score": 0.9777777777777777,
+            "support": 22.0
+        },
+        "graher1 (Gray Heron)": {
+            "precision": 0.9565217391304348,
+            "recall": 0.9565217391304348,
+            "f1-score": 0.9565217391304348,
+            "support": 23.0
+        },
+        "grewar3 (Greenish Warbler)": {
+            "precision": 0.9565217391304348,
+            "recall": 1.0,
+            "f1-score": 0.9777777777777777,
+            "support": 22.0
+        },
+        "grnsan (Green Sandpiper)": {
+            "precision": 1.0,
+            "recall": 0.9565217391304348,
+            "f1-score": 0.9777777777777777,
+            "support": 23.0
+        },
+        "accuracy": 0.9733727810650887,
+        "macro avg": {
+            "precision": 0.9737812911725957,
+            "recall": 0.9736495388669302,
+            "f1-score": 0.973314929836669,
+            "support": 338.0
+        },
+        "weighted avg": {
+            "precision": 0.9738814697008676,
+            "recall": 0.9733727810650887,
+            "f1-score": 0.9732318963088195,
+            "support": 338.0
+        }
+    }
+}

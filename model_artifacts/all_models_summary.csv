@@ -1,0 +1,8 @@
+Model Architecture,Inference Method,Parameters,Top-1 Test Acc (%),Top-3 Test Acc (%),Macro F1 (%)
+Baseline Custom CNN,Center Crop,"423,727",50.59,N/A,50.26
+ResNet-18,Center Crop,"11,184,143",49.11,N/A,49.0
+MobileNetV3,Multi-Window Ensemble,"1,674,863",79.59,92.6,79.75
+CRNN (CNN+GRU),Multi-Window Ensemble,"786,800",83.73,93.49,83.81
+EfficientNet-B0,Multi-Window Ensemble,"4,339,595",86.69,94.67,86.63
+ConvNeXt-Tiny,Multi-Window Ensemble,"28,021,359",87.28,95.86,87.37
+BirdNET (Cornell),Sliding Window,Pretrained Foundation,97.34,99.7,97.33
